@@ -1,42 +1,42 @@
-version: '3'                # phiên bản sử dụng của docker compose 2 hoặc 3
+version: '3'                                                              # phiên bản sử dụng của docker compose 2 hoặc 3
 
-services:                 #các dịch vụ được chạy trên container
-  wp:                     # wordpress              
-    image: wordpress:latest # https://hub.docker.com/_/wordpress/       # cài đặt image cho wp   
+services:                                                                 #các dịch vụ được chạy, mỗi service là 1 container
+  wp:                                                                     # wordpress              
+    image: wordpress:latest # https://hub.docker.com/_/wordpress/         # cài đặt image cho wp   
     ports:
-      - ${IP}:80:80 # change ip if required                       # khi container chạy nó sử dụng địa chỉ ip-tùy ý, cùng với cổng 80 ánh xạ vào cổng 80-http của container đang chạy
-    volumes:                    #ánh xạ thư mục vào container
-      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini    #ánh xạ php.conf.ini trong file config vào thư mục của container theo đường dẫn 
-      - ./wp-app:/var/www/html # Full wordpress project             #như trên
+      - ${IP}:80:80 # change ip if required                               # kết nối port 80 của host với port 80 của container
+    volumes:                                                              #ánh xạ thư mục vào container
+      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini          #ánh xạ file conf.ini của container ra ngoài máy host, tránh mất dữ liệu khi xóa container
+      - ./wp-app:/var/www/html # Full wordpress project                   #như trên
       #- ./plugin-name/trunk/:/var/www/html/wp-content/plugins/plugin-name # Plugin development
       #- ./theme-name/trunk/:/var/www/html/wp-content/themes/theme-name # Theme development
-    environment:              #tạo các biến môi trường  
-      WORDPRESS_DB_HOST: db           #thiết lập cho wordpress
+    environment:                                                           #tạo các biến môi trường  
+      WORDPRESS_DB_HOST: db                                                #thiết lập cho wordpress
       WORDPRESS_DB_NAME: "${DB_NAME}"
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: "${DB_ROOT_PASSWORD}"
-    depends_on:     # tự động thiết lập network để kết nối giữa container và host
+    depends_on:                                                            # Chọn các service được dùng là dependency cho container được xác định trong service hiện tại.
       - db
-    links:    #khi wordpess chạy, luôn kết nối tới db, không quan tâm tới port bao nhiêu 
+    links:                                                                 #Wordpress phụ thuộc vào db (nếu db tèo -> wp ko thể chạy), luôn kết nối tới db, không quan tâm tới port bao nhiêu 
       - db
 
   wpcli:
-    image: wordpress:cli
-    volumes:
+    image: wordpress:cli                                                   #image để chạy wpcli
+    volumes:                                                               #ánh xạ thư mục vào container
       - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
       - ./wp-app:/var/www/html
-    depends_on:
+    depends_on:                                                             #Chọn các service được dùng là dependency cho container được xác định trong service hiện tại.
       - db
       - wp
 
   pma:
-    image: phpmyadmin/phpmyadmin
-    environment:
+    image: phpmyadmin/phpmyadmin                                            #image để xd container
+    environment:                                                            #tạo các biến môi trường
       PMA_HOST: db
       PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
     ports:
-      - ${IP}:8080:80
+      - ${IP}:8080:80                                                       #ánh xạ port 80 của container vào port 8080 của host
     links:
       - db:db
 
@@ -44,17 +44,17 @@ services:                 #các dịch vụ được chạy trên container
     image: mysql:latest # https://hub.docker.com/_/mysql/ - or mariadb https://hub.docker.com/_/mariadb
     ports:
       - ${IP}:3306:3306 # change ip if required
-    command: [
-        '--default_authentication_plugin=mysql_native_password',
-        '--character-set-server=utf8mb4',
-        '--collation-server=utf8mb4_unicode_ci'
-    ]
-    volumes:
+    command: [                                                              #đặt lệnh thực hiên
+        '--default_authentication_plugin=mysql_native_password',            #xác thực
+        '--character-set-server=utf8mb4',                                   #  ?
+        '--collation-server=utf8mb4_unicode_ci'                             #  ?
+        ]
+    volumes:                                                                # ánh xạ dữ liệu từ container ra host
       - ./wp-data:/docker-entrypoint-initdb.d
       - db_data:/var/lib/mysql
-    environment:
+    environment:                                                            #tạo biến môi trường
       MYSQL_DATABASE: "${DB_NAME}"
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
 
-volumes:
+volumes:                                                                  #tạo ổ đĩa
   db_data:
